@@ -357,7 +357,7 @@ async function getDefPrinter() {
 async function printFile(localFilePath: string): Promise<boolean> {
   switch (platform) {
     case 'win32':
-      // await print(localFilePath, { printer: cachedDefaultPrinter });
+      await print(localFilePath, { printer: cachedDefaultPrinter });
       return true;
     case 'linux':
       const cmd = `lpr -P ${cachedDefaultPrinter} -o ColorModel=Gray "${localFilePath}"`;
