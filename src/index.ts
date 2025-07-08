@@ -257,7 +257,7 @@ async function getDefPrinter() {
         if (getDefaultPrinter) {
           return {
             status: "SUCCESS",
-            printer
+            printer: printer.name
           };
         }
       } catch (error) {
