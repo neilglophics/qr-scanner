@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Invoice System</title>
+</head>
+
+<body>
+  <div class="main_container" id="main-container"></div>
+
+  <template id="landing-page">
+    <div class="landing_header">
+      <div class="row_box top_heading" id="logo-header">
+        <h1>Invoice System</h1>
+      </div>
+      <button id="go-to-qr">QR Mode</button>
+      <button id="go-to-config" style="background-color: #1A1A1A;">Configurations</button>
+    </div>
+  </template>
+
+  <template id="qr-page">
+    <div class="wrapper">
+      <button class="back_button" id="home-button">Back</button>
+      <!-- <div id="qr-section">
+        <h1>QR Scanner</h1>
+        <video id="webcam" autoplay playsinline width="500" height="500"></video>
+      </div> -->
+      <!-- Topbar -->
+      <div class="col_box mb-40">
+        <div class="row_box">
+          <form class="input-wrapper">
+            <input placeholder="Enter reference number or invoice no..." id="waybill-input" required>
+            <span id="clear-button">&times;</span>
+          </form>
+          <button id="view-waybill" title="View Waybill" class="option_button" disabled>
+            View Waybill
+          </button>
+          <button id="print-waybill" title="Print Waybill" class="option_button" style="background-color: #39393B;"
+            disabled>
+            Print Waybill
+          </button>
+        </div>
+      </div>
+
+      <!-- Not Found Error  -->
+      <div class="message_wrapper" id="error-message">
+        <h1>Oh Snap!</h1>
+        <p>It seems that the waybill you are looking for doesn't exist in the system yet.</p>
+      </div>
+
+      <!-- Waybill Content -->
+      <div class="col_box waybill_container" id="waybill-content">
+        <div class="waybill_header">
+          <h1 id="user-header"></h1>
+          <p class="kinds" id="kinds"></p>
+        </div>
+        <div>
+          <p id="user-fullname"></p>
+          <p id="user-email"></p>
+        </div>
+        <div class="artwork_row" id="artwork-row">
+          <!-- Artwork cards are dynamically generated and appended via JavaScript in the renderer -->
+          <!-- Example structure for reference (not rendered directly):
+            <div class="card">
+              <div class="image_container">
+                <img src="sample.jpg" alt="Artwork" />
+                <div class="size_block">
+                  <p>80x80mm</p>
+                </div>
+              </div>
+              <p>Artpaper Sticker / Die Cut / Matte / Normal</p>
+              <p class="card_footer">500 pcs</p>
+            </div>
+        -->
+        </div>
+      </div>
+
+      <!-- Modal  -->
+      <div class="modal_overlay" id="modal-overlay">
+        <div class="modal_container">
+          <button class="close_button" id="close-button">
+            <!-- Render content on renderer.ts -->
+          </button>
+          <div class="modal_content" id="modal-content">
+            <h1>Printing Waybill</h1>
+            <p id="waybill-no"></p>
+            <button>Stop Print</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal_overlay" id="loading-modal">
+        <div class="modal_container">
+          <div class="modal_content">
+            <h1>Fetching Waybill Item...</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="config-page">
+    <div class="col_box wrapper">
+      <button class="back_button" id="home-button">Back</button>
+      <label for="printerList">Select a Printer:</label>
+      <div class="row_box">
+        <select id="printerList" style="width: 100%;">
+          <option value="">Fetching printers...</option>
+        </select>
+        <button id="refresh-printer" title="Refresh Printers" style="background: none; border: none; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor"
+            class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"></path>
+            <path
+              d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466">
+            </path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <div id="toast" style="
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  font-size: 14px;
+  z-index: 9999;
+" />
+</body>
+
+</html>

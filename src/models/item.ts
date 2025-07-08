@@ -1,0 +1,23 @@
+export interface WaybillItem {
+    address_book_id: string,
+    invoice_no: string,
+    email: string,
+    first_name: string,
+    last_name: string,
+    shipping_master_id: string,
+    shipping_item_address_book_id: string,
+    quantity: string,
+    product_name: string,
+    supply: string,
+    material?: string,
+    finishing?: string,
+    adhesive?: string,
+    thumbnail?: string,
+    size?: string,
+    is_thumbnail_auto?: string,
+    color?: string,
+    tag_string?: null,
+    install_ready?: string,
+    is_free_dispenser?: string,
+    order_master_id?: string
+}
