@@ -70,7 +70,20 @@ app.whenReady().then(() => {
   createWindow()
 
   ipcMain.handle('get-printers', async () => {
-    return await getPrinters();
+    switch (platform) {
+      case 'win32':
+        return await getPrinters();
+      case 'linux':
+        const { stdout } = await promisifyExec('lpstat -p');
+        return stdout.split('\n')
+          .filter(line => line.startsWith('printer '))
+          .map(line => ({ name: line.split(' ')[1] }));
+      default:
+        return {
+          status: 'ERROR',
+          error: 'OS not supported!'
+        }
+    }
   });
 
   /*
@@ -285,6 +298,12 @@ async function getDefPrinter() {
       }
       break;
     case 'linux':
+      const { stdout } = await promisifyExec('lpstat -p');
+      const printers = stdout.split('\n')
+        .filter(line => line.startsWith('printer '))
+        .map(line => line.split(' ')[1]);
+      console.log(printers)
+
       try {
         await promisifyExec('systemctl is-active --quiet cups');
       } catch (error) {
@@ -317,9 +336,9 @@ async function getDefPrinter() {
       }
     default:
       return {
-          status: "ERROR",
-          error: "OS not supported!",
-        };
+        status: "ERROR",
+        error: "OS not supported!",
+      };
       break;
   }
 }

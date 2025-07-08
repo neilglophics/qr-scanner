@@ -1,5 +1,5 @@
 export interface Printer {
-    deviceId: string,
+    deviceId?: string,
     name: string,
     paperSizes?: string[],
 }
