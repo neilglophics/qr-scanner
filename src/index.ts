@@ -92,7 +92,6 @@ app.whenReady().then(() => {
     let fileResponse: AxiosResponse<any, any>
 
     if (!cachedDefaultPrinter) {
-      console.log('inside if');
       const defPrinterRes = await getDefPrinter();
       if (defPrinterRes.status === 'SUCCESS') {
         cachedDefaultPrinter = defPrinterRes.printer;
