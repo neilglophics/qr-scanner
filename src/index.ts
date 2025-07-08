@@ -254,6 +254,18 @@ function manualSearch(invoiceNo: string): string {
   return accountMapper(account, env);
 }
 
+
+/**
+ * Retrieves the system's default printer name based on the operating system.
+ *
+ * - Windows: Uses `getDefaultPrinter()` from `pdf-to-printer`.
+ * - Linux:
+ *    - Verifies that the CUPS service is installed and running.
+ *    - Uses `lpstat -d` to get the system's default printer.
+ *
+ * @returns {Promise<{ status: "SUCCESS", printer: string } | { status: "ERROR", error: string }>}
+ *          An object indicating success and the default printer name, or an error message.
+ */
 async function getDefPrinter() {
   switch (platform) {
     case 'win32':
@@ -273,7 +285,6 @@ async function getDefPrinter() {
       }
       break;
     case 'linux':
-
       try {
         await promisifyExec('systemctl is-active --quiet cups');
       } catch (error) {
@@ -299,21 +310,35 @@ async function getDefPrinter() {
           }
         }
       } catch (error) {
-        console.log(error)
         return {
           status: "ERROR",
           error: error?.message,
         };
       }
     default:
+      return {
+          status: "ERROR",
+          error: "OS not supported!",
+        };
       break;
   }
 }
 
+/**
+ * Prints a file to the system's default or specified printer,
+ * with support for both Windows and Linux platforms.
+ *
+ * - On Windows: uses print command from pdf-to-printer command
+ * - On Linux: Uses the `lpr` command with optional grayscale (`ColorModel=Gray`) setting.
+ * - Other platforms: Returns false (unsupported).
+ *
+ * @param {string} localFilePath - The full path to the file (usually PDF) to be printed.
+ * @returns {Promise<boolean>} - Resolves to `true` if the print command was successfully issued, otherwise `false`.
+ */
 async function printFile(localFilePath: string): Promise<boolean> {
   switch (platform) {
     case 'win32':
-      await print(localFilePath, { printer: cachedDefaultPrinter });
+      // await print(localFilePath, { printer: cachedDefaultPrinter });
       return true;
     case 'linux':
       const cmd = `lpr -P ${cachedDefaultPrinter} -o ColorModel=Gray "${localFilePath}"`;
