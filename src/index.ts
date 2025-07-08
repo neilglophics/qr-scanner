@@ -276,6 +276,15 @@ async function getDefPrinter() {
     case 'linux':
 
       try {
+        await promisifyExec('systemctl is-active --quiet cups');
+      } catch (error) {
+        return {
+          status: "ERROR",
+          error: `CUPS is not installed or not running. Please install and start the CUPS service`,
+        }
+      }
+
+      try {
         const { stdout } = await promisifyExec('lpstat -d');
         const match = stdout.match(/^system default destination:\s+(.+)$/m);
 
