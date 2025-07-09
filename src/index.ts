@@ -279,7 +279,7 @@ function manualSearch(invoiceNo: string): string {
  * @returns {Promise<{ status: "SUCCESS", printer: string } | { status: "ERROR", error: string }>}
  *          An object indicating success and the default printer name, or an error message.
  */
-async function getDefPrinter() {
+async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } | { status: "ERROR"; error: string; }> {
   switch (platform) {
     case 'win32':
       try {
