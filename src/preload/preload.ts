@@ -8,6 +8,6 @@ import { QR } from "src/models/qr";
 
 contextBridge.exposeInMainWorld('waybill', {
     getPrinters: (): Promise<Printer[]> => ipcRenderer.invoke('get-printers'),
-    printPdf: (url: QR, printerName: string, printOption: PrintOption, manualLookup?: boolean): Promise<string> => ipcRenderer.invoke('print', url, printerName, printOption, manualLookup),
+    printPdf: (url: QR, printerName: string | null, printOption: PrintOption, manualLookup?: boolean): Promise<string> => ipcRenderer.invoke('print', url, printerName, printOption, manualLookup),
     getItems: (data: QR, manualLookup?: boolean): Promise<object> => ipcRenderer.invoke('getItems', data, manualLookup)
 });

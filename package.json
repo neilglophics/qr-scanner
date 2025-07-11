@@ -6,7 +6,7 @@
   "main": ".webpack/main",
   "scripts": {
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "env-cmd -f .env.local cross-env electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
     "start": "env-cmd -f .env.dev electron-forge start",

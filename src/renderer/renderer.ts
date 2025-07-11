@@ -10,7 +10,7 @@ import { WaybillItem } from 'src/models/item';
 import { Order } from 'src/models/order';
 import infoImage from '../assets/Info.png';
 let cachedPrinters: Printer[] = [];
-
+let selectedPrinter: string | null = null;
 const initQrPage = () => {
     function showToast(message: string, type = 'sucess', duration = 6000) {
         const toast = document.getElementById('toast')!;
@@ -62,11 +62,10 @@ const initQrPage = () => {
         try {
             // Start both async calls in parallel
             const getItemsPromise = window.waybill.getItems(data, true);
-            const printPromise = window.waybill.printPdf(data, 'Brother DCP-T500W', 'waybill' as PrintOption, true);
+            const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption, true);
 
             // Await getItems and check result
             const res: any = await getItemsPromise;
-            console.log(res)
             if (res.status !== 'SUCCESS') {
                 showToast(res.error, 'error');
                 return;
@@ -121,11 +120,10 @@ const initQrPage = () => {
             try {
                 // Start both async calls in parallel
                 const getItemsPromise = window.waybill.getItems(data, true);
-                const printPromise = window.waybill.printPdf(data, 'Brother DCP-T500W', 'waybill' as PrintOption, true);
+                const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption, true);
 
                 // Await getItems and check result
                 const res: any = await getItemsPromise;
-                console.log(res)
                 if (res.status !== 'SUCCESS') {
                     loadingModal.style.display = 'none'
                     showToast(res.error, 'error');
@@ -380,7 +378,7 @@ const initQrPage = () => {
 
                 // Start both calls in parallel
                 const getItemsPromise = window.waybill.getItems(parsedData);
-                const printPromise = window.waybill.printPdf(parsedData, 'Brother DCP-T500W', 'waybill' as PrintOption);
+                const printPromise = window.waybill.printPdf(parsedData, selectedPrinter, 'waybill' as PrintOption);
 
                 // Await getItems and check result
                 const res: any = await getItemsPromise;
@@ -461,10 +459,10 @@ const initLandingPage = () => {
 
 const initConfigurationPage = () => {
     /**
- * Immediately invoked async function to:
- * - Fetch the list of available printers via `window.printer.getPrinters()`
- * - Populate the <select> dropdown with printer options
- */
+     * Immediately invoked async function to:
+     * - Fetch the list of available printers via `window.printer.getPrinters()`
+     * - Populate the <select> dropdown with printer options
+     */
     const fetchPrinters = async (isRefresh: boolean = false) => {
         const printerDropdown = document.getElementById('printerList');
         printerDropdown.innerHTML = '';
@@ -492,10 +490,22 @@ const initConfigurationPage = () => {
             return;
         }
 
+        const placeholderOption = document.createElement('option');
+        placeholderOption.textContent = 'Select a printer...';
+        placeholderOption.disabled = true;
+        placeholderOption.selected = !selectedPrinter;
+        placeholderOption.hidden = true;
+        printerDropdown.appendChild(placeholderOption);
+
         cachedPrinters.map((printers: Printer) => {
             const option = document.createElement('option');
             option.dataset.printerId = printers.deviceId;
             option.textContent = `${printers.name}`;
+
+            if (printers.name === selectedPrinter) {
+                option.selected = true;
+            }
+
             printerDropdown.appendChild(option);
         })
     }
@@ -505,6 +515,17 @@ const initConfigurationPage = () => {
     /* Refresh printer list */
     document.getElementById('refresh-printer').addEventListener('click', async () => {
         await fetchPrinters(true);
+    })
+
+    const printerDropdown = document.getElementById('printerList') as HTMLSelectElement;
+
+    printerDropdown.addEventListener('change', (event) => {
+        const target = event.target as HTMLSelectElement;
+        const printerValue = target.value;
+        if (printerValue) {
+            selectedPrinter = printerValue;
+
+        }
     })
 
     document.getElementById('home-button')?.addEventListener('click', () => {
