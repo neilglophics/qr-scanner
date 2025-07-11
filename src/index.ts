@@ -356,7 +356,7 @@ async function printFile(localFilePath: string, printer: string): Promise<boolea
   console.log(printer)
   switch (platform) {
     case 'win32':
-      // await print(localFilePath, { printer });
+      await print(localFilePath, { printer });
       return true;
     case 'linux':
       const cmd = `lpr -P ${printer} -o ColorModel=Gray "${localFilePath}"`;
