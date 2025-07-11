@@ -91,7 +91,7 @@ app.whenReady().then(() => {
     * Once downloaded, the PDF is used for printing.
     * After the print attempt (successful or failed), the temporary file is automatically deleted to free up disk space.
   */
-  ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string, printOption: PrintOption, manualLookup: boolean = false) => {
+  ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string | null, printOption: PrintOption, manualLookup: boolean = false) => {
     let apiUrl = manualLookup ? manualSearch(data.invoice_no) : data.url
     if (!apiUrl) {
       return {
@@ -112,7 +112,7 @@ app.whenReady().then(() => {
         return defPrinterRes
       }
     }
-
+    const printer = printerName ? printerName : cachedDefaultPrinter;
     if (printOption === PrintOption.WAYBILL) {
       try {
         // Get Waybill URL from api
@@ -164,7 +164,7 @@ app.whenReady().then(() => {
     });
 
     try {
-      const filePrinted = await printFile(localFilePath);
+      const filePrinted = await printFile(localFilePath, printer);
       if (!filePrinted) {
         return {
           status: 'ERROR',
@@ -301,9 +301,7 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
       const { stdout } = await promisifyExec('lpstat -p');
       const printers = stdout.split('\n')
         .filter(line => line.startsWith('printer '))
-        .map(line => line.split(' ')[1]);
-      console.log(printers)
-
+        .map(line => line.split(' ')[1])
       try {
         await promisifyExec('systemctl is-active --quiet cups');
       } catch (error) {
@@ -354,13 +352,14 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
  * @param {string} localFilePath - The full path to the file (usually PDF) to be printed.
  * @returns {Promise<boolean>} - Resolves to `true` if the print command was successfully issued, otherwise `false`.
  */
-async function printFile(localFilePath: string): Promise<boolean> {
+async function printFile(localFilePath: string, printer: string): Promise<boolean> {
+  console.log(printer)
   switch (platform) {
     case 'win32':
-      await print(localFilePath, { printer: cachedDefaultPrinter });
+      await print(localFilePath, { printer });
       return true;
     case 'linux':
-      const cmd = `lpr -P ${cachedDefaultPrinter} -o ColorModel=Gray "${localFilePath}"`;
+      const cmd = `lpr -P ${printer} -o ColorModel=Gray "${localFilePath}"`;
       await promisifyExec(cmd);
       return true;
     default:
