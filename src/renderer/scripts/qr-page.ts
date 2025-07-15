@@ -75,6 +75,7 @@ export const initQrPage = () => {
             }
         } else {
             try {
+                const startTime = Date.now();
                 // Start both async calls in parallel
                 const getItemsPromise = window.waybill.getItems(data, true);
                 const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption, true);
@@ -113,6 +114,17 @@ export const initQrPage = () => {
                     printModal.style.display = 'none';
                 }
 
+                // Format timestamp to HH:MM:SS.mmm
+                const formatTime = (timestamp: number) => {
+                    const date = new Date(timestamp);
+                    return date.toLocaleTimeString('en-US', { hour12: false }) + '.' + date.getMilliseconds().toString().padStart(3, '0');
+                };
+                const endTime = Date.now()
+                const durationMs = endTime - startTime;
+                const durationSec = (durationMs / 1000).toFixed(2);
+                console.log(`Start time: ${formatTime(startTime)}`);
+                console.log(`End time:   ${formatTime(endTime)}`);
+                console.log(`Duration:   ${durationSec} s (${durationMs.toFixed(2)} ms)`);
             }
             catch (error) {
                 showToast(String(error), 'error');
