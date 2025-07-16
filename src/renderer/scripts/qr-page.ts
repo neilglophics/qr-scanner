@@ -23,6 +23,7 @@ export const initQrPage = () => {
     const printModal = document.getElementById('modal-overlay') as HTMLDivElement;
     const waybillSection = document.getElementById('waybill-content') as HTMLDivElement;
     const loadingModal = document.getElementById('loading-modal') as HTMLDivElement;
+    const toast = document.getElementById('toast')!;
 
     /* Util Functions */
     // When tab is focused, focus on waybill input
@@ -38,6 +39,7 @@ export const initQrPage = () => {
 
     // Track when the user clicks or types in the visible input
     waybillInput.addEventListener('focus', () => {
+        clearToast();
         lastManualFocusTime = Date.now();
     });
     waybillInput.addEventListener('keydown', () => {
@@ -160,21 +162,19 @@ export const initQrPage = () => {
         }
     }
 
-    function showToast(message: string, type = 'sucess', duration = 6000) {
-        const toast = document.getElementById('toast')!;
+    function showToast(message: string, type = 'sucess') {
         toast.textContent = message;
-        toast.style.display = 'block';
+        toast.style.display = 'flex';
 
         if (type === 'error') {
             toast.style.backgroundColor = '#D32F2F';
         } else {
             toast.style.backgroundColor = '#323232';
         }
+    }
 
-        setTimeout(() => {
-            toast.style.display = 'none';
-            toast.textContent = '';
-        }, duration);
+    function clearToast() {
+        toast.style.display = 'none';
     }
 
 
@@ -193,6 +193,7 @@ export const initQrPage = () => {
     })
 
     waybillQrInput.addEventListener('keydown', async (e) => {
+        clearToast();
         if (e.key === 'Enter') {
             const raw = waybillQrInput.value.trim();
             try {
@@ -241,41 +242,6 @@ export const initQrPage = () => {
                     waybillQrInput.disabled = false;
                     waybillQrInput.focus()
                 });
-            // setTimeout(async () => {
-            //     const raw = waybillInput.value.trim();
-            //     try {
-            //         const parsed = JSON.parse(raw);
-            //         if (typeof parsed === 'object' && parsed !== null && 'invoice_no' in parsed) {
-            //             waybillInput.value = parsed.invoice_no;
-            //             console.log('Extracted invoice number:', parsed.invoice_no);
-
-            //             data = {
-            //                 invoice_no: parsed.invoice_no,
-            //             };
-
-            //         } else {
-            //             throw new Error('Not a valid QR JSON object');
-            //         }
-            //     } catch (err) {
-            //         // Treat as plain invoice number
-            //         if (raw === '') {
-            //             showToast('Invoice number should not be empty', 'error');
-            //             return;
-            //         }
-
-            //         console.log('Scanned raw invoice number:', raw);
-            //         data = {
-            //             invoice_no: raw,
-            //         };
-            //     }
-            //     await handleWaybillPrint(data)
-            //         .then(() => {
-            //             waybillQrInput.value = '';
-            //             waybillQrInput.disabled = false;
-            //             waybillQrInput.focus()
-            //         });
-
-            // }, 50);
         }
     });
 
@@ -296,10 +262,6 @@ export const initQrPage = () => {
         printWayBill.disabled = true;
         waybillQrInput.focus();
     });
-
-    // viewButton.addEventListener('click', () => {
-    //     errorMessage.style.display = 'flex';
-    // });
 
     /* Error Message Script */
     const img = document.createElement('img');
