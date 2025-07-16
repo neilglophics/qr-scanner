@@ -294,7 +294,7 @@ export const initQrPage = () => {
         viewButton.disabled = true;
         printWayBill.style.opacity = '0.5';
         printWayBill.disabled = true;
-        waybillInput.focus();
+        waybillQrInput.focus();
     });
 
     // viewButton.addEventListener('click', () => {
