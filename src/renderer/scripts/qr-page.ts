@@ -13,7 +13,7 @@ let selectedPrinter: string | null = null;
 
 export const initQrPage = () => {
     /* Topbar Script */
-    const input = document.getElementById('waybill-input') as HTMLInputElement;
+    const waybillInput = document.getElementById('waybill-input') as HTMLInputElement;
     const clearBtn = document.getElementById('clear-button');
     const viewButton = document.getElementById('view-waybill') as HTMLButtonElement;
     const printWayBill = document.getElementById('print-waybill') as HTMLButtonElement;
@@ -23,11 +23,24 @@ export const initQrPage = () => {
     const loadingModal = document.getElementById('loading-modal') as HTMLDivElement;
 
     /* Util Functions */
+
+    // Interval to set focus on waybill input incase if the input was focused anywhere
+    setInterval(() => {
+        if (document.activeElement !== waybillInput) {
+            waybillInput.focus();
+        }
+    }, 500);
+
+    // When tab is focused, focus on waybill input
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            waybillInput.focus();
+        }
+    });
+
     const handleWaybillPrint = async (data: QR, isLiveQr: boolean = false) => {
         if (isLiveQr == true) {
             try {
-                const waybillInput = document.getElementById('waybill-input') as HTMLInputElement;
-
                 // qrSection.style.display = 'none';
                 waybillInput.value = data.invoice_no;
 
@@ -96,6 +109,7 @@ export const initQrPage = () => {
 
                 const order: Order = res.response.data.order;
                 document.getElementById('kinds')!.textContent = `${order.total} kinds`;
+                document.getElementById('invoice-no')!.textContent = order.invoice_no;
                 document.getElementById('user-header')!.textContent = order.full_name;
                 document.getElementById('user-fullname')!.textContent = order.full_name;
                 document.getElementById('user-email')!.textContent = order.email;
@@ -149,13 +163,6 @@ export const initQrPage = () => {
         }, duration);
     }
 
-    input.addEventListener('input', () => {
-        clearBtn.style.display = input.value ? 'block' : 'none';
-        viewButton.style.opacity = input.value ? '100' : '0.5';
-        viewButton.disabled = false;
-        printWayBill.style.opacity = input.value ? '100' : '0.5';
-        printWayBill.disabled = false;
-    });
 
     printWayBill.addEventListener('click', async () => {
         const waybillInput = document.getElementById('waybill-input') as HTMLInputElement;
@@ -171,41 +178,71 @@ export const initQrPage = () => {
         await handleWaybillPrint(data);
     })
 
-    input.addEventListener('keydown', async (e) => {
+    waybillInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             loadingModal.style.display = 'flex'
-            const value = input.value.trim()
 
-            if (value === '') {
-                showToast('Invoice number should not be empty', 'error')
-            }
+            let data: QR;
+            setTimeout(async () => {
+                const raw = waybillInput.value.trim();
+                waybillInput.disabled = true;
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (typeof parsed === 'object' && parsed !== null && 'invoice_no' in parsed) {
+                        waybillInput.value = parsed.invoice_no;
+                        console.log('Extracted invoice number:', parsed.invoice_no);
 
-            const data: QR = {
-                invoice_no: value,
-            }
+                        data = {
+                            invoice_no: parsed.invoice_no,
+                        };
 
-            await handleWaybillPrint(data);
+                    } else {
+                        throw new Error('Not a valid QR JSON object');
+                    }
+                } catch (err) {
+                    // Treat as plain invoice number
+                    if (raw === '') {
+                        showToast('Invoice number should not be empty', 'error');
+                        return;
+                    }
+
+                    console.log('Scanned raw invoice number:', raw);
+                    data = {
+                        invoice_no: raw,
+                    };
+                }
+                await handleWaybillPrint(data)
+                    .then(() => {
+                        waybillInput.value = '';
+                        waybillInput.disabled = false;
+                        waybillInput.focus()
+                    });
+
+            }, 50);
         }
     });
 
+    waybillInput.addEventListener('input', () => {
+        clearBtn.style.display = waybillInput.value ? 'block' : 'none';
+        viewButton.style.opacity = waybillInput.value ? '100' : '0.5';
+        viewButton.disabled = false;
+        printWayBill.style.opacity = waybillInput.value ? '100' : '0.5';
+        printWayBill.disabled = false;
+    });
+
     clearBtn.addEventListener('click', () => {
-        input.value = '';
+        waybillInput.value = '';
         clearBtn.style.display = 'none';
         viewButton.style.opacity = '0.5';
         viewButton.disabled = true;
         printWayBill.style.opacity = '0.5';
         printWayBill.disabled = true;
-        input.focus();
+        waybillInput.focus();
     });
 
     // viewButton.addEventListener('click', () => {
     //     errorMessage.style.display = 'flex';
-    // });
-
-    // printWayBill.addEventListener('click', () => {
-    //     printModal.style.display = 'flex';
-    //     waybillSection.style.display = 'flex';
     // });
 
     /* Error Message Script */

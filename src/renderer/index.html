@@ -30,7 +30,7 @@
       <div class="col_box mb-40">
         <div class="row_box">
           <form class="input-wrapper">
-            <input placeholder="Enter reference number or invoice no..." id="waybill-input" required>
+            <input placeholder="Enter reference number or invoice no..." id="waybill-input" required autofocus>
             <span id="clear-button">&times;</span>
           </form>
           <button id="view-waybill" title="View Waybill" class="option_button" disabled>
@@ -56,6 +56,7 @@
           <p class="kinds" id="kinds"></p>
         </div>
         <div>
+          <p id="invoice-no"></p>
           <p id="user-fullname"></p>
           <p id="user-email"></p>
         </div>

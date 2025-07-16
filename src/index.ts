@@ -337,7 +337,6 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
         status: "ERROR",
         error: "OS not supported!",
       };
-      break;
   }
 }
 
@@ -353,7 +352,6 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
  * @returns {Promise<boolean>} - Resolves to `true` if the print command was successfully issued, otherwise `false`.
  */
 async function printFile(localFilePath: string, printer: string): Promise<boolean> {
-  console.log(printer)
   switch (platform) {
     case 'win32':
       // await print(localFilePath, { printer });
