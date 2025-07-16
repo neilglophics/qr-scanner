@@ -1,7 +1,7 @@
 
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { PrintOption } from 'src/constants/print-option';
-import closeImage from '../../assets/sample.png';
+import closeImage from '../../assets/close_icon.png';
 import printImage from '../../assets/print.png';
 import { QR } from 'src/models/qr';
 import { WaybillItem } from 'src/models/item';
@@ -13,7 +13,7 @@ let selectedPrinter: string | null = null;
 
 export const initQrPage = () => {
     /* Topbar Script */
-    const input = document.getElementById('waybill-input') as HTMLInputElement;
+    const waybillInput = document.getElementById('waybill-input') as HTMLInputElement;
     const clearBtn = document.getElementById('clear-button');
     const viewButton = document.getElementById('view-waybill') as HTMLButtonElement;
     const printWayBill = document.getElementById('print-waybill') as HTMLButtonElement;
@@ -23,49 +23,126 @@ export const initQrPage = () => {
     const loadingModal = document.getElementById('loading-modal') as HTMLDivElement;
 
     /* Util Functions */
-    const handleWaybillPrint = async (data: QR) => {
-        try {
-            // Start both async calls in parallel
-            const getItemsPromise = window.waybill.getItems(data, true);
-            const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption, true);
 
-            // Await getItems and check result
-            const res: any = await getItemsPromise;
-            if (res.status !== 'SUCCESS') {
-                loadingModal.style.display = 'none'
-                showToast(res.error, 'error');
-                return;
-            }
-
-            loadingModal.style.display = 'none'
-            waybillSection.style.display = 'flex';
-            artworkRow.innerHTML = '';
-            printModal.style.display = 'flex';
-            document.getElementById('waybill-no')!.textContent = `You are printing Waybill No. ${data.invoice_no}.`;
-
-            const order: Order = res.response.data.order;
-            document.getElementById('kinds')!.textContent = `${order.total} kinds`;
-            document.getElementById('user-header')!.textContent = order.full_name;
-            document.getElementById('user-fullname')!.textContent = order.full_name;
-            document.getElementById('user-email')!.textContent = order.email;
-
-            res.response.data.items.forEach((item: WaybillItem) => {
-                artworkRow.appendChild(createArtworkCard(item));
-            });
-
-            // Now handle print result
-            const printRes: any = await printPromise;
-            if (printRes.status === 'ERROR') {
-                console.error('Print failed:', printRes.error);
-                printModal.style.display = 'none';
-                showToast('Printing failed: ' + String(printRes.error), 'error');
-            } else {
-                printModal.style.display = 'none';
-            }
-
+    // Interval to set focus on waybill input incase if the input was focused anywhere
+    setInterval(() => {
+        if (document.activeElement !== waybillInput) {
+            waybillInput.focus();
         }
-        catch (error) {
-            showToast(String(error), 'error');
+    }, 500);
+
+    // When tab is focused, focus on waybill input
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            waybillInput.focus();
+        }
+    });
+
+    const handleWaybillPrint = async (data: QR, isLiveQr: boolean = false) => {
+        if (isLiveQr == true) {
+            try {
+                // qrSection.style.display = 'none';
+                waybillInput.value = data.invoice_no;
+
+                // Start both calls in parallel
+                const getItemsPromise = window.waybill.getItems(data);
+                const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption);
+
+                // Await getItems and check result
+                const res: any = await getItemsPromise;
+
+                if (res.status !== 'SUCCESS') {
+                    showToast(res.response.message, 'error');
+                    return;
+                }
+                loadingModal.style.display = 'none'
+                // Populate UI with fetched data
+                waybillSection.style.display = 'flex';
+                artworkRow.innerHTML = '';
+                printModal.style.display = 'flex';
+                document.getElementById('waybill-no')!.textContent = `You are printing Waybill No. ${data.invoice_no}.`;
+
+                const order: Order = res.response.data.order;
+                document.getElementById('kinds')!.textContent = `${order.total} kinds`;
+                document.getElementById('user-header')!.textContent = order.full_name;
+                document.getElementById('user-fullname')!.textContent = order.full_name;
+                document.getElementById('user-email')!.textContent = order.email;
+
+                res.response.data.items.forEach((item: WaybillItem) => {
+                    artworkRow.appendChild(createArtworkCard(item));
+                });
+
+                // Now handle print result
+                const printRes: any = await printPromise;
+                if (printRes.status === 'ERROR') {
+                    console.error('Print failed:', printRes.error);
+                    showToast('Printing failed: ' + String(printRes.error), 'error');
+                }
+
+            } catch (error) {
+                showToast(String(error), 'error');
+            } finally {
+                printModal.style.display = 'none';
+                // qrSection.style.display = 'block';
+                await startScanner();
+            }
+        } else {
+            try {
+                const startTime = Date.now();
+                // Start both async calls in parallel
+                const getItemsPromise = window.waybill.getItems(data, true);
+                const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption, true);
+
+                // Await getItems and check result
+                const res: any = await getItemsPromise;
+                if (res.status !== 'SUCCESS') {
+                    loadingModal.style.display = 'none'
+                    showToast(res.error, 'error');
+                    return;
+                }
+
+                loadingModal.style.display = 'none'
+                waybillSection.style.display = 'flex';
+                artworkRow.innerHTML = '';
+                printModal.style.display = 'flex';
+                document.getElementById('waybill-no')!.textContent = `You are printing Waybill No. ${data.invoice_no}.`;
+
+                const order: Order = res.response.data.order;
+                document.getElementById('kinds')!.textContent = `${order.total} kinds`;
+                document.getElementById('invoice-no')!.textContent = order.invoice_no;
+                document.getElementById('user-header')!.textContent = order.full_name;
+                document.getElementById('user-fullname')!.textContent = order.full_name;
+                document.getElementById('user-email')!.textContent = order.email;
+
+                res.response.data.items.forEach((item: WaybillItem) => {
+                    artworkRow.appendChild(createArtworkCard(item));
+                });
+
+                // Now handle print result
+                const printRes: any = await printPromise;
+                if (printRes.status === 'ERROR') {
+                    console.error('Print failed:', printRes.error);
+                    printModal.style.display = 'none';
+                    showToast('Printing failed: ' + String(printRes.error), 'error');
+                } else {
+                    printModal.style.display = 'none';
+                }
+
+                // Format timestamp to HH:MM:SS.mmm
+                const formatTime = (timestamp: number) => {
+                    const date = new Date(timestamp);
+                    return date.toLocaleTimeString('en-US', { hour12: false }) + '.' + date.getMilliseconds().toString().padStart(3, '0');
+                };
+                const endTime = Date.now()
+                const durationMs = endTime - startTime;
+                const durationSec = (durationMs / 1000).toFixed(2);
+                console.log(`Start time: ${formatTime(startTime)}`);
+                console.log(`End time:   ${formatTime(endTime)}`);
+                console.log(`Duration:   ${durationSec} s (${durationMs.toFixed(2)} ms)`);
+            }
+            catch (error) {
+                showToast(String(error), 'error');
+            }
         }
     }
 
@@ -86,13 +163,6 @@ export const initQrPage = () => {
         }, duration);
     }
 
-    input.addEventListener('input', () => {
-        clearBtn.style.display = input.value ? 'block' : 'none';
-        viewButton.style.opacity = input.value ? '100' : '0.5';
-        viewButton.disabled = false;
-        printWayBill.style.opacity = input.value ? '100' : '0.5';
-        printWayBill.disabled = false;
-    });
 
     printWayBill.addEventListener('click', async () => {
         const waybillInput = document.getElementById('waybill-input') as HTMLInputElement;
@@ -100,7 +170,7 @@ export const initQrPage = () => {
         if (waybillInput.value === '') {
             showToast('Invoice number should not be empty', 'error')
         }
-
+        loadingModal.style.display = 'flex'
         const data: QR = {
             invoice_no: waybillInput.value,
         }
@@ -108,41 +178,71 @@ export const initQrPage = () => {
         await handleWaybillPrint(data);
     })
 
-    input.addEventListener('keydown', async (e) => {
+    waybillInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             loadingModal.style.display = 'flex'
-            const value = input.value.trim()
 
-            if (value === '') {
-                showToast('Invoice number should not be empty', 'error')
-            }
+            let data: QR;
+            setTimeout(async () => {
+                const raw = waybillInput.value.trim();
+                waybillInput.disabled = true;
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (typeof parsed === 'object' && parsed !== null && 'invoice_no' in parsed) {
+                        waybillInput.value = parsed.invoice_no;
+                        console.log('Extracted invoice number:', parsed.invoice_no);
 
-            const data: QR = {
-                invoice_no: value,
-            }
+                        data = {
+                            invoice_no: parsed.invoice_no,
+                        };
 
-            await handleWaybillPrint(data);
+                    } else {
+                        throw new Error('Not a valid QR JSON object');
+                    }
+                } catch (err) {
+                    // Treat as plain invoice number
+                    if (raw === '') {
+                        showToast('Invoice number should not be empty', 'error');
+                        return;
+                    }
+
+                    console.log('Scanned raw invoice number:', raw);
+                    data = {
+                        invoice_no: raw,
+                    };
+                }
+                await handleWaybillPrint(data)
+                    .then(() => {
+                        waybillInput.value = '';
+                        waybillInput.disabled = false;
+                        waybillInput.focus()
+                    });
+
+            }, 50);
         }
     });
 
+    waybillInput.addEventListener('input', () => {
+        clearBtn.style.display = waybillInput.value ? 'block' : 'none';
+        viewButton.style.opacity = waybillInput.value ? '100' : '0.5';
+        viewButton.disabled = false;
+        printWayBill.style.opacity = waybillInput.value ? '100' : '0.5';
+        printWayBill.disabled = false;
+    });
+
     clearBtn.addEventListener('click', () => {
-        input.value = '';
+        waybillInput.value = '';
         clearBtn.style.display = 'none';
         viewButton.style.opacity = '0.5';
         viewButton.disabled = true;
         printWayBill.style.opacity = '0.5';
         printWayBill.disabled = true;
-        input.focus();
+        waybillInput.focus();
     });
 
     // viewButton.addEventListener('click', () => {
     //     errorMessage.style.display = 'flex';
-    // });
-
-    // printWayBill.addEventListener('click', () => {
-    //     printModal.style.display = 'flex';
-    //     waybillSection.style.display = 'flex';
     // });
 
     /* Error Message Script */
@@ -332,55 +432,8 @@ export const initQrPage = () => {
             // Stop scanning after first success
             _controls?.stop();
             loadingModal.style.display = 'flex'
-            try {
-                const waybillInput = document.getElementById('waybill-input') as HTMLInputElement;
-                const parsedData: QR = JSON.parse(result.getText());
-
-                // qrSection.style.display = 'none';
-                waybillInput.value = parsedData.invoice_no;
-
-                // Start both calls in parallel
-                const getItemsPromise = window.waybill.getItems(parsedData);
-                const printPromise = window.waybill.printPdf(parsedData, selectedPrinter, 'waybill' as PrintOption);
-
-                // Await getItems and check result
-                const res: any = await getItemsPromise;
-
-                if (res.status !== 'SUCCESS') {
-                    showToast(res.response.message, 'error');
-                    return;
-                }
-                loadingModal.style.display = 'none'
-                // Populate UI with fetched data
-                waybillSection.style.display = 'flex';
-                artworkRow.innerHTML = '';
-                printModal.style.display = 'flex';
-                document.getElementById('waybill-no')!.textContent = `You are printing Waybill No. ${parsedData.invoice_no}.`;
-
-                const order: Order = res.response.data.order;
-                document.getElementById('kinds')!.textContent = `${order.total} kinds`;
-                document.getElementById('user-header')!.textContent = order.full_name;
-                document.getElementById('user-fullname')!.textContent = order.full_name;
-                document.getElementById('user-email')!.textContent = order.email;
-
-                res.response.data.items.forEach((item: WaybillItem) => {
-                    artworkRow.appendChild(createArtworkCard(item));
-                });
-
-                // Now handle print result
-                const printRes: any = await printPromise;
-                if (printRes.status === 'ERROR') {
-                    console.error('Print failed:', printRes.error);
-                    showToast('Printing failed: ' + String(printRes.error), 'error');
-                }
-
-            } catch (error) {
-                showToast(String(error), 'error');
-            } finally {
-                printModal.style.display = 'none';
-                // qrSection.style.display = 'block';
-                await startScanner();
-            }
+            const parsedData: QR = JSON.parse(result.getText());
+            await (handleWaybillPrint(parsedData, true))
 
         } else {
             console.log('Scanning... No QR detected in current frame.');
