@@ -5,13 +5,13 @@ import * as fs from 'fs';
 import axios, { AxiosResponse } from 'axios';
 import { QR } from './models/qr';
 import { PrintOption } from './constants/print-option';
-import { Printer } from './models/printer';
 import invoiceMapper from './utils/invoice-mapper';
 import * as dotenv from 'dotenv';
 import { accountMapper, Environment } from './utils/account-mapper';
 import { exec } from 'child_process';
-import { stdout } from 'process';
 import { promisify } from 'util';
+import log from 'electron-log';
+log.info('App is starting...');
 dotenv.config();
 
 const promisifyExec = promisify(exec);
@@ -69,10 +69,20 @@ const createWindow = (): void => {
 app.whenReady().then(() => {
   createWindow()
 
-  ipcMain.handle('get-printers', async () => {
+  ipcMain.handle('get-printers', async (event: Electron.IpcMainInvokeEvent) => {
     switch (platform) {
       case 'win32':
-        return await getPrinters();
+        try {
+          const printers = await event.sender.getPrintersAsync();
+          return printers.map(p => ({
+            deviceId: p.name,
+            name: p.displayName || p.name,
+          }));
+        } catch (error) {
+          log.error('[get-printers] Failed to get printers via Electron:', error);
+          return [];
+        }
+
       case 'linux':
         const { stdout } = await promisifyExec('lpstat -p');
         return stdout.split('\n')
@@ -112,6 +122,7 @@ app.whenReady().then(() => {
         return defPrinterRes
       }
     }
+
     const printer = printerName ? printerName : cachedDefaultPrinter;
     if (printOption === PrintOption.WAYBILL) {
       try {
@@ -132,7 +143,7 @@ app.whenReady().then(() => {
         // Download Waybill PDF
         fileResponse = await axios.get(response.data.data, { responseType: 'stream' });
       } catch (error) {
-        console.log('API error response:', error?.response?.data);
+        log.error('API error response:', error?.response?.data);
         return {
           status: 'ERROR',
           error: error?.response?.data.error ?? 'Error',
@@ -148,7 +159,7 @@ app.whenReady().then(() => {
         });
         fileResponse = response;
       } catch (error) {
-        console.log(error)
+        log.error(error)
         return {
           status: 'ERROR',
           error: 'Error in fething pdf',
@@ -184,9 +195,9 @@ app.whenReady().then(() => {
       // Clear the temp file
       fs.unlink(localFilePath, (unlinkErr) => {
         if (unlinkErr) {
-          console.error('[CLEANUP] Failed to delete temp file:', unlinkErr);
+          log.error('[CLEANUP] Failed to delete temp file:', unlinkErr);
         } else {
-          console.log('[CLEANUP] Temp file deleted:', localFilePath);
+          log.info('[CLEANUP] Temp file deleted:', localFilePath);
         }
       });
     }
@@ -283,18 +294,26 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
   switch (platform) {
     case 'win32':
       try {
-        const printer = await getDefaultPrinter();
-        if (getDefaultPrinter) {
+        const { stdout } = await promisifyExec(
+          'powershell -Command "Get-CimInstance -ClassName Win32_Printer | Where-Object { $_.Default -eq $true } | Select-Object -ExpandProperty Name"'
+        );
+        const printer = stdout.trim();
+        if (printer) {
           return {
-            status: "SUCCESS",
-            printer: printer.name
+            status: 'SUCCESS',
+            printer
+          };
+        } else {
+          return {
+            status: 'ERROR',
+            error: 'No default printer detected.'
           };
         }
       } catch (error) {
         return {
           status: 'ERROR',
-          error: 'No default printer detected!'
-        }
+          error: `PowerShell failed: ${error.message}`
+        };
       }
       break;
     case 'linux':
@@ -354,8 +373,13 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
 async function printFile(localFilePath: string, printer: string): Promise<boolean> {
   switch (platform) {
     case 'win32':
-      // await print(localFilePath, { printer });
-      return true;
+      try {
+        await print(localFilePath, { printer });
+        log.info('Printed successfully');
+        return true;
+      } catch (err) {
+        log.error('Print failed:', err);
+      }
     case 'linux':
       const cmd = `lpr -P ${printer} -o ColorModel=Gray "${localFilePath}"`;
       await promisifyExec(cmd);

@@ -9,7 +9,7 @@ import { Order } from 'src/models/order';
 import infoImage from '../../assets/Info.png';
 import './landing-page';
 import { registerPage, renderPage } from './render-page';
-let selectedPrinter: string | null = null;
+import { selectedPrinter } from './configuration-page';
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
 export const initQrPage = () => {

@@ -2,7 +2,7 @@ import { Printer } from 'pdf-to-printer/dist';
 import { initLandingPage } from './landing-page';
 import { registerPage, renderPage } from './render-page';
 let cachedPrinters: Printer[] = [];
-let selectedPrinter: string | null = null;
+export let selectedPrinter: string | null = null;
 
 export const initConfigurationPage = () => {
     /**
@@ -71,7 +71,6 @@ export const initConfigurationPage = () => {
         const printerValue = target.value;
         if (printerValue) {
             selectedPrinter = printerValue;
-
         }
     })
 
