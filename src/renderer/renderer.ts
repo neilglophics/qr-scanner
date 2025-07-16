@@ -1,29 +1,10 @@
-import { initLandingPage } from "./scripts/landing-page";
+import './scripts/landing-page';
+import './scripts/qr-page';
+import './scripts/configuration-page';
 import './index.css';
-/* Code for custom router */
-function renderPage(templateId: string) {
-    const container = document.getElementById('main-container')!;
-    const template = document.getElementById(templateId) as HTMLTemplateElement;
+import { renderPage } from "./scripts/render-page";
 
-    if (!template) {
-        console.error(`Template with id '${templateId}' not found.`);
-        return;
-    }
-
-    const clone = template.content.cloneNode(true);
-    container.innerHTML = '';
-    container.appendChild(clone);
-}
-
-/* Once dom is loaded render landing page and initialize/bind the event listeners */
+// Initial load
 document.addEventListener('DOMContentLoaded', () => {
     renderPage('landing-page');
-    initLandingPage();
 });
-
-
-
-/* Util Functions */
-// const handleWaybillPrint = async (data: QR, stru) => {
-
-// }

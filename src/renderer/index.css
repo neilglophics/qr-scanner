@@ -314,3 +314,7 @@ p {
   border-radius: 5px;
   margin-bottom: 25px;
 }
+
+#waybill-input:focus {
+  outline: none;
+}

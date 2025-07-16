@@ -1,6 +1,6 @@
 import { Printer } from 'pdf-to-printer/dist';
 import { initLandingPage } from './landing-page';
-import { renderPage } from './render-page';
+import { registerPage, renderPage } from './render-page';
 let cachedPrinters: Printer[] = [];
 let selectedPrinter: string | null = null;
 
@@ -77,7 +77,6 @@ export const initConfigurationPage = () => {
 
     document.getElementById('home-button')?.addEventListener('click', () => {
         renderPage('landing-page');
-        initLandingPage();
     });
 
     /**
@@ -101,4 +100,9 @@ export const initConfigurationPage = () => {
     //     }
     // });
 }
+
+registerPage('config-page', {
+    init: initConfigurationPage
+})
+
 

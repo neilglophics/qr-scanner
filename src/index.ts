@@ -354,7 +354,7 @@ async function getDefPrinter(): Promise<{ status: "SUCCESS"; printer: string; } 
 async function printFile(localFilePath: string, printer: string): Promise<boolean> {
   switch (platform) {
     case 'win32':
-      await print(localFilePath, { printer });
+      // await print(localFilePath, { printer });
       return true;
     case 'linux':
       const cmd = `lpr -P ${printer} -o ColorModel=Gray "${localFilePath}"`;

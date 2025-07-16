@@ -30,7 +30,9 @@
       <div class="col_box mb-40">
         <div class="row_box">
           <form class="input-wrapper">
-            <input placeholder="Enter reference number or invoice no..." id="waybill-input" required autofocus>
+            <input id="waybill-qr-input" type="text" autocomplete="off" autofocus
+              style="opacity: 0; position: absolute; left: -9999px;" />
+            <input placeholder="Enter reference number or invoice no..." id="waybill-input" required>
             <span id="clear-button">&times;</span>
           </form>
           <button id="view-waybill" title="View Waybill" class="option_button" disabled>
