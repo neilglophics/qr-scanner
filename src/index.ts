@@ -189,6 +189,25 @@ app.whenReady().then(() => {
           error: `OS not supported!`,
         };
       }
+
+      try {
+        const response = await axios({
+          method: 'POST',
+          url: `${apiUrl}/index.php/api/qr-scanner/done-invoice/${data.invoice_no}`,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Request-From': 'admin-panel',
+            // Custom header to bypass Laravel Cors setup
+            'X-App-Source': 'electron-app'
+          },
+        });
+        log.info('[Done Invoice] Invoice status changed', response.data);
+      } catch (error) {
+        log.error('[Done Invoice] Unable to process invoice', error);
+      }
+
       return {
         status: 'SUCCESS',
         message: `PDF downloaded and printed successfully. Path: ${localFilePath}`

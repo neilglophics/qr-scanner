@@ -17,7 +17,7 @@ declare global {
   interface Window {
     waybill: {
       getPrinters: () => Promise<Printer[]>,
-      printPdf: (url: QR, printerName: string | null, printOption: PrintOption, manualLookup?: boolean) => Promise<string>,
+      printPdf: (data: QR, printerName: string | null, printOption: PrintOption, manualLookup?: boolean) => Promise<string>,
       getItems: (data: QR, manualLookup?: boolean) => Promise<object>
     };
   }
