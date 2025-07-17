@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { getPrinters, print, getDefaultPrinter } from 'pdf-to-printer';
+import { print } from 'pdf-to-printer';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios, { AxiosResponse } from 'axios';
@@ -384,7 +384,7 @@ async function printFile(localFilePath: string, printer: string): Promise<boolea
     case 'win32':
       try {
         await print(localFilePath, { printer });
-        log.info('Printed successfully');
+        log.info('Printed successfully on printer', printer);
         return true;
       } catch (err) {
         log.error('Print failed:', err);

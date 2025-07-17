@@ -189,7 +189,13 @@ export const initQrPage = () => {
             invoice_no: waybillInput.value,
         }
 
-        await handleWaybillPrint(data);
+        await handleWaybillPrint(data)
+            .then(() => {
+                waybillInput.value = '';
+                waybillQrInput.value = '';
+                waybillQrInput.disabled = false;
+                waybillQrInput.focus();
+            });;
     })
 
     waybillQrInput.addEventListener('keydown', async (e) => {
@@ -238,9 +244,10 @@ export const initQrPage = () => {
 
             await handleWaybillPrint(data)
                 .then(() => {
+                    waybillInput.value = '';
                     waybillQrInput.value = '';
                     waybillQrInput.disabled = false;
-                    waybillQrInput.focus()
+                    waybillQrInput.focus();
                 });
         }
     });
@@ -462,8 +469,8 @@ export const initQrPage = () => {
         }
     };
 
-    // Start scanner
-    startScanner();
+    // Used to start scanner for webcam devices
+    // startScanner();
 
     document.getElementById('home-button')?.addEventListener('click', () => {
         console.log('heereee');
