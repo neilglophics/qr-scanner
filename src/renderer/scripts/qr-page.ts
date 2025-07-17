@@ -320,7 +320,17 @@ export const initQrPage = () => {
         if (waybillItem.product_name === 'Sample Pack') {
             name.textContent = `${waybillItem.product_name}`;
         } else {
-            name.textContent = `${waybillItem.product_name} / ${waybillItem.supply} / ${waybillItem.finishing}`;
+            let title = `${waybillItem.product_name}`;
+
+            if (waybillItem.supply) {
+                title = title.concat(` / ${waybillItem.supply}`)
+            }
+
+            if (waybillItem.finishing) {
+                title = title.concat(` / ${waybillItem.finishing}`)
+            }
+
+            name.textContent = title;
         }
         card.appendChild(name);
 
