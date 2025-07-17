@@ -314,3 +314,18 @@ p {
   border-radius: 5px;
   margin-bottom: 25px;
 }
+
+#waybill-input:focus {
+  outline: none;
+}
+
+.toast-box {
+  height: 80px;
+  background-color: red;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: white;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
