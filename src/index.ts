@@ -11,6 +11,8 @@ import { accountMapper, Environment } from './utils/account-mapper';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import log from 'electron-log';
+import { doneInvoice, getWaybillItems, getWaybillUrl } from './services/waybill';
+import { getJobDetails } from './services/job-description';
 
 log.info('App is starting...');
 dotenv.config();
@@ -129,18 +131,7 @@ app.whenReady().then(() => {
     if (printOption === PrintOption.WAYBILL) {
       try {
         // Get Waybill URL from api
-        const response = await axios({
-          method: 'GET',
-          url: `${apiUrl}/index.php/api/qr-scanner/get-waybill-url/${data.invoice_no}`,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Request-From': 'admin-panel',
-            // Custom header to bypass Laravel Cors setup
-            'X-App-Source': 'electron-app'
-          },
-        });
+        const response = await getWaybillUrl(apiUrl, data.invoice_no);
 
         // Download Waybill PDF
         fileResponse = await axios.get(response.data.data, { responseType: 'stream' });
@@ -154,16 +145,7 @@ app.whenReady().then(() => {
 
     } else {
       try {
-        const response = await axios({
-          method: 'GET',
-          url: `${apiUrl}/index.php/pdf/job-details/preview`,
-          params: {
-            invoice_no: data.invoice_no,
-            order_master_id: data.id,
-            email: data.email
-          },
-          responseType: 'stream'
-        });
+        const response = await getJobDetails(apiUrl, data);
         fileResponse = response;
       } catch (error) {
         log.error('[Job Description] API error response:', error?.response?.data)
@@ -191,18 +173,7 @@ app.whenReady().then(() => {
       }
 
       try {
-        const response = await axios({
-          method: 'POST',
-          url: `${apiUrl}/index.php/api/qr-scanner/done-invoice/${data.invoice_no}`,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Request-From': 'admin-panel',
-            // Custom header to bypass Laravel Cors setup
-            'X-App-Source': 'electron-app'
-          },
-        });
+        const response = await doneInvoice(apiUrl, data.invoice_no);
         log.info('[Done Invoice] Invoice status changed', response.data);
       } catch (error) {
         log.error('[Done Invoice] Unable to process invoice', error);
@@ -240,17 +211,7 @@ ipcMain.handle('getItems', async (_event: Electron.IpcMainInvokeEvent, data: QR,
     };
   }
   try {
-    const response = await axios({
-      method: 'GET',
-      url: `${apiUrl}/index.php/api/qr-scanner/get-items/${data.invoice_no}`,
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        // Custom header to bypass Laravel Cors setup
-        'X-App-Source': 'electron-app'
-      },
-    });
+    const response = await getWaybillItems(apiUrl, data.invoice_no);
 
     if (response.data.status === 'SUCCESS') {
       return {
