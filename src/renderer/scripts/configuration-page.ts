@@ -12,6 +12,7 @@ export const initConfigurationPage = () => {
      */
     const fetchPrinters = async (isRefresh: boolean = false) => {
         const printerDropdown = document.getElementById('printerList');
+        const configDefaultPrinter = await window.waybill.getConfigDefaultPrinter();
         printerDropdown.innerHTML = '';
 
         if (cachedPrinters.length === 0 || isRefresh === true) {
@@ -38,7 +39,11 @@ export const initConfigurationPage = () => {
         }
 
         const placeholderOption = document.createElement('option');
-        placeholderOption.textContent = 'Select a printer...';
+        if (configDefaultPrinter) {
+            placeholderOption.textContent = configDefaultPrinter.name
+        } else {
+            placeholderOption.textContent = 'Select a printer...';
+        }
         placeholderOption.disabled = true;
         placeholderOption.selected = !selectedPrinter;
         placeholderOption.hidden = true;
@@ -71,6 +76,7 @@ export const initConfigurationPage = () => {
         const printerValue = target.value;
         if (printerValue) {
             selectedPrinter = printerValue;
+            window.waybill.setPrinter(printerValue);
         }
     })
 

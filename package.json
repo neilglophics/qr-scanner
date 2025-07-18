@@ -11,7 +11,7 @@
     "start": "env-cmd -f .env.local electron-forge start",
     "start:dev": "env-cmd -f .env.dev electron-forge start",
     "start:prod": "env-cmd -f .env.dev electron-forge start",
-     "make": "env-cmd -f .env.local cross-env electron-forge make",
+    "make": "env-cmd -f .env.local cross-env electron-forge make",
     "make:dev": "env-cmd -f .env.dev cross-env NODE_ENV=production electron-forge make",
     "make:prod": "env-cmd -f .env.prod cross-env NODE_ENV=production electron-forge make"
   },
@@ -56,6 +56,7 @@
     "dotenv": "^17.0.1",
     "electron-log": "^5.4.1",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^8.2.0",
     "fs": "^0.0.1-security",
     "pdf-to-printer": "^5.6.0"
   }

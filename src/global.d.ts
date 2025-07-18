@@ -19,6 +19,8 @@ declare global {
       getPrinters: () => Promise<Printer[]>,
       printPdf: (data: QR, printerName: string | null, printOption: PrintOption, manualLookup?: boolean) => Promise<string>,
       getItems: (data: QR, manualLookup?: boolean) => Promise<object>
+      setPrinter: (printerName: string) => Promise<string>
+      getConfigDefaultPrinter: () => Promise<Printer | null>
     };
   }
 }
