@@ -36,7 +36,7 @@ const API_URLS: Record<Account, Record<Environment, string>> = {
     JP: {
         local: 'http://api.stickerjapan',
         development: 'https://dev-api.stickerjapan.com',
-        live: 'https://api.stickerdot.co.nz'
+        live: 'https://api.stickerjapan.com'
     },
 }
 
