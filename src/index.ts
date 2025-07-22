@@ -108,8 +108,8 @@ app.whenReady().then(() => {
     * Once downloaded, the PDF is used for printing.
     * After the print attempt (successful or failed), the temporary file is automatically deleted to free up disk space.
   */
-  ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string | null, printOption: PrintOption, manualLookup: boolean = false) => {
-    let apiUrl = manualLookup ? manualSearch(data.invoice_no) : data.url
+  ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string | null, printOption: PrintOption) => {
+    let apiUrl = manualSearch(data.invoice_no)
     if (!apiUrl) {
       return {
         status: 'ERROR',
@@ -208,7 +208,7 @@ app.whenReady().then(() => {
 
 ipcMain.handle('getItems', async (_event: Electron.IpcMainInvokeEvent, data: QR, manualLookup: boolean = false) => {
 
-  let apiUrl = manualLookup ? manualSearch(data.invoice_no) : data.url
+  let apiUrl = manualSearch(data.invoice_no)
   if (!apiUrl) {
     return {
       status: 'FAIL',

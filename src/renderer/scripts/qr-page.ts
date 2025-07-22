@@ -59,8 +59,8 @@ export const initQrPage = () => {
         try {
             const startTime = Date.now();
             // Start both async calls in parallel
-            const getItemsPromise = window.waybill.getItems(data, true);
-            const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption, true);
+            const getItemsPromise = window.waybill.getItems(data);
+            const printPromise = window.waybill.printPdf(data, selectedPrinter, 'waybill' as PrintOption);
 
             // Await getItems and check result
             const res: any = await getItemsPromise;
