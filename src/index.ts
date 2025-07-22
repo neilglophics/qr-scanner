@@ -117,9 +117,11 @@ app.whenReady().then(() => {
       };
     }
 
-    const tempFileName = `downloaded_${Date.now()}.pdf`;
-    const localFilePath = path.join(app.getPath('temp'), tempFileName);
-    let fileResponse: AxiosResponse<any, any>
+    let fileResponse: AxiosResponse<any, any>;
+    let responseData: {
+      status: string,
+      waybill: string
+    }[]
 
     if (!cachedDefaultPrinter) {
       const defPrinterRes = await getDefPrinter();
@@ -134,18 +136,15 @@ app.whenReady().then(() => {
     if (printOption === PrintOption.WAYBILL) {
       try {
         // Get Waybill URL from api
-        const response = await getWaybillUrl(apiUrl, data.invoice_no);
-
-        // Download Waybill PDF
-        fileResponse = await axios.get(response.data.data, { responseType: 'stream' });
+        const waybillResponse = await getWaybillUrl(apiUrl, data.invoice_no);
+        responseData = waybillResponse.data.data
       } catch (error) {
-        log.error('[Waybill Url] API error response:', error?.response?.data);
+        log.error('[Waybill Url] API error response:', error);
         return {
           status: 'ERROR',
           error: error?.response?.data.error ?? 'Error',
         };
       }
-
     } else {
       try {
         const response = await getJobDetails(apiUrl, data);
@@ -159,48 +158,51 @@ app.whenReady().then(() => {
       }
     }
 
-    await new Promise<void>((resolve, reject) => {
-      const writer = fs.createWriteStream(localFilePath);
-      fileResponse.data.pipe(writer);
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
+    await Promise.all(
+      responseData.map(async (data) => {
+        const tempFileName = `downloaded_${Date.now()}_${Math.random()}.pdf`;
+        const localFilePath = path.join(app.getPath('temp'), tempFileName);
+
+        try {
+          const fileResponse = await axios.get(data.waybill, { responseType: 'stream' });
+
+          await new Promise<void>((resolve, reject) => {
+            const writer = fs.createWriteStream(localFilePath);
+            fileResponse.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+          });
+
+          const filePrinted = await printFile(localFilePath, printer);
+          if (!filePrinted) {
+            throw new Error('OS not supported!');
+          }
+
+          log.info(`[SUCCESS] Printed: ${localFilePath}`);
+        } catch (error) {
+          log.error(`[ERROR] Processing file: ${error}`);
+        }
+        // finally {
+        //   fs.unlink(localFilePath, (unlinkErr) => {
+        //     if (unlinkErr) log.error('[CLEANUP] Failed:', unlinkErr);
+        //   });
+        // }
+      })
+    );
 
     try {
-      const filePrinted = await printFile(localFilePath, printer);
-      if (!filePrinted) {
-        return {
-          status: 'ERROR',
-          error: `OS not supported!`,
-        };
-      }
-
-      try {
-        const response = await doneInvoice(apiUrl, data.invoice_no);
-        log.info('[Done Invoice] Invoice status changed', response.data);
-      } catch (error) {
-        log.error('[Done Invoice] Unable to process invoice', error);
-      }
-
-      return {
-        status: 'SUCCESS',
-        message: `PDF downloaded and printed successfully. Path: ${localFilePath}`
-      };
+      const response = await doneInvoice(apiUrl, data.invoice_no);
+      log.info('[Done Invoice] Invoice status changed', response.data);
     } catch (error) {
-      return {
-        status: 'ERROR',
-        error: `Printing failed: ${error}`,
-      };
-    } finally {
-      // Clear the temp file
-      fs.unlink(localFilePath, (unlinkErr) => {
-        if (unlinkErr) {
-          log.error('[CLEANUP] Failed to delete temp file:', unlinkErr);
-        } else {
-          log.info('[CLEANUP] Temp file deleted:', localFilePath);
-        }
-      });
+      log.error('[Done Invoice] Unable to process invoice', error);
     }
+
+    return {
+      status: 'SUCCESS',
+      message: 'All waybills processed',
+    };
+
+
   })
 })
 
@@ -392,7 +394,7 @@ async function printFile(localFilePath: string, printer: string): Promise<boolea
   switch (platform) {
     case 'win32':
       try {
-        await print(localFilePath, { printer });
+        await print(localFilePath, { printer, monochrome: true });
         log.info('Printed successfully on printer', printer);
         return true;
       } catch (err) {
