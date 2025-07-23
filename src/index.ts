@@ -15,6 +15,8 @@ import { doneInvoice, getWaybillItems, getWaybillUrl } from './services/waybill'
 import { getJobDetails } from './services/job-description';
 import ElectronStore from 'electron-store';
 import { StoreSchema } from './models/store-schema';
+import { getWowPressAccount } from './services/wowpress';
+import { Account } from './constants/accounts';
 
 log.info('App is starting...');
 dotenv.config();
@@ -109,11 +111,12 @@ app.whenReady().then(() => {
     * After the print attempt (successful or failed), the temporary file is automatically deleted to free up disk space.
   */
   ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string | null, printOption: PrintOption) => {
-    let apiUrl = manualSearch(data.invoice_no)
-    if (!apiUrl) {
+
+    let apiAccount = await accountMapping(data.invoice_no)
+    if (apiAccount.status === 'ERROR') {
       return {
         status: 'ERROR',
-        error: 'Invalid Invoice Number.',
+        error: apiAccount.message,
       };
     }
 
@@ -133,10 +136,11 @@ app.whenReady().then(() => {
     }
 
     const printer = printerName ? printerName : cachedDefaultPrinter;
+
     if (printOption === PrintOption.WAYBILL) {
       try {
         // Get Waybill URL from api
-        const waybillResponse = await getWaybillUrl(apiUrl, data.invoice_no);
+        const waybillResponse = await getWaybillUrl(apiAccount.account, data.invoice_no);
         responseData = waybillResponse.data.data
       } catch (error) {
         log.error('[Waybill Url] API error response:', error);
@@ -147,7 +151,7 @@ app.whenReady().then(() => {
       }
     } else {
       try {
-        const response = await getJobDetails(apiUrl, data);
+        const response = await getJobDetails(apiAccount.account, data);
         fileResponse = response;
       } catch (error) {
         log.error('[Job Description] API error response:', error?.response?.data)
@@ -181,17 +185,16 @@ app.whenReady().then(() => {
           log.info(`[SUCCESS] Printed: ${localFilePath}`);
         } catch (error) {
           log.error(`[ERROR] Processing file: ${error}`);
+        } finally {
+          fs.unlink(localFilePath, (unlinkErr) => {
+            if (unlinkErr) log.error('[CLEANUP] Failed:', unlinkErr);
+          });
         }
-        // finally {
-        //   fs.unlink(localFilePath, (unlinkErr) => {
-        //     if (unlinkErr) log.error('[CLEANUP] Failed:', unlinkErr);
-        //   });
-        // }
       })
     );
 
     try {
-      const response = await doneInvoice(apiUrl, data.invoice_no);
+      const response = await doneInvoice(apiAccount.account, data.invoice_no);
       log.info('[Done Invoice] Invoice status changed', response.data);
     } catch (error) {
       log.error('[Done Invoice] Unable to process invoice', error);
@@ -206,17 +209,18 @@ app.whenReady().then(() => {
   })
 })
 
-ipcMain.handle('getItems', async (_event: Electron.IpcMainInvokeEvent, data: QR, manualLookup: boolean = false) => {
+ipcMain.handle('getItems', async (_event: Electron.IpcMainInvokeEvent, data: QR) => {
 
-  let apiUrl = manualSearch(data.invoice_no)
-  if (!apiUrl) {
+  let apiAccount = await accountMapping(data.invoice_no)
+  if (apiAccount.status === 'ERROR') {
     return {
       status: 'FAIL',
-      error: 'Invalid Invoice Number.',
+      error: apiAccount.message,
     };
   }
+
   try {
-    const response = await getWaybillItems(apiUrl, data.invoice_no);
+    const response = await getWaybillItems(apiAccount.account, data.invoice_no);
 
     if (response.data.status === 'SUCCESS') {
       return {
@@ -273,19 +277,45 @@ app.on('activate', () => {
 });
 
 
-function manualSearch(invoiceNo: string): string {
-  const account = invoiceMapper(invoiceNo);
+async function accountMapping(invoiceNo: string) {
+  const isWowpress = invoiceNo.startsWith('WP');
+  let account: Account
+
+  if (isWowpress) {
+    const response = await getWowPressAccount(invoiceNo);
+    let accountRes = response.data.order;
+    if (!accountRes) {
+      return {
+        status: 'ERROR',
+        message: 'Reference number does not exist on the system.'
+      }
+    }
+    account = accountRes.account.toString().toUpperCase() as Account;
+  } else {
+    account = invoiceMapper(invoiceNo);
+  }
+
   if (!account) {
     console.warn(`No account found for invoice number: ${invoiceNo}`);
-    return null;
+    return {
+      status: 'ERROR',
+      message: `No account found for invoice number: ${invoiceNo}`
+    };
   }
   const env = process.env.APP_ENV as Environment;
 
   if (!env) {
     console.warn('Environment variable APP_ENV is not set.');
-    return null;
+    return {
+      status: 'ERROR',
+      message: `Environment variable APP_ENV is not set.`
+    };
   }
-  return accountMapper(account, env);
+
+  return {
+    status: 'SUCCESS',
+    account: accountMapper(account, env)
+  };
 }
 
 

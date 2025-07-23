@@ -10,7 +10,6 @@ export const initLandingPage = () => {
     document.getElementById('logo-header')?.prepend(logo);
 
     document.getElementById('go-to-qr')?.addEventListener('click', () => {
-        console.log('heeree');
         renderPage('qr-page');
     });
 

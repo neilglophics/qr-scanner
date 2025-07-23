@@ -149,11 +149,21 @@ export const initQrPage = () => {
         clearToast();
         if (e.key === 'Enter') {
             const raw = waybillQrInput.value.trim();
+            console.log(raw)
             try {
-                const parsed = JSON.parse(raw);
-                if (typeof JSON.parse(raw) !== 'object') {
-                    showToast('Invalid QR code detected!', 'error');
-                    return
+                // TODO condition if string starts with WP
+                let parsed
+                if (raw.startsWith('WP')) {
+                    console.log('inside condition')
+                    parsed = {
+                        invoice_no: raw
+                    }
+                } else {
+                    parsed = JSON.parse(raw);
+                    if (typeof JSON.parse(raw) !== 'object') {
+                        showToast('Invalid QR code detected!', 'error');
+                        return
+                    }
                 }
                 waybillQrInput.disabled = true;
                 const enterEvent = new KeyboardEvent('keydown', {
