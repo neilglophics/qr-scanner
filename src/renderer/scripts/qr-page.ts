@@ -23,6 +23,7 @@ export const initQrPage = () => {
     const waybillSection = document.getElementById('waybill-content') as HTMLDivElement;
     const loadingModal = document.getElementById('loading-modal') as HTMLDivElement;
     const toast = document.getElementById('toast')!;
+    const waybillToast = document.getElementById('toast-waybill-box')!;
     const artworkRow = document.getElementById('artwork-row') as HTMLElement;
     const waybillContent = document.getElementById('waybill-content') as HTMLElement;
 
@@ -85,6 +86,34 @@ export const initQrPage = () => {
 
             // Now handle print result
             const printRes: any = await printPromise;
+            if (printRes.failedWaybillItems && printRes.failedWaybillItems.length > 0) {
+                waybillToast.innerHTML = '';
+
+                const heading = document.createElement('div');
+                heading.innerHTML = '<strong>Error printing waybill(s):</strong>';
+                waybillToast.appendChild(heading);
+
+                const explanation = document.createElement('div');
+                explanation.textContent = "These invoice(s) don't have waybills yet.";
+                explanation.style.fontSize = '0.9rem'; // optional: smaller font
+                explanation.style.marginTop = '4px';
+                waybillToast.appendChild(explanation);
+
+                const ul = document.createElement('ul');
+                ul.style.margin = '0';
+                ul.style.paddingLeft = '1rem';
+
+                printRes.failedWaybillItems.forEach((item: any) => {
+                    const li = document.createElement('li');
+                    li.textContent = item.invoice;
+                    ul.appendChild(li);
+                });
+
+                waybillToast.appendChild(ul);
+
+                waybillToast.style.display = 'flex';
+            }
+
             if (printRes.status === 'ERROR') {
                 console.error('Print failed:', printRes.error);
                 printModal.style.display = 'none';
@@ -123,6 +152,7 @@ export const initQrPage = () => {
 
     function clearToast() {
         toast.style.display = 'none';
+        waybillToast.style.display = 'none';
     }
 
     printWayBill.addEventListener('click', async () => {

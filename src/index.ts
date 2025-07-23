@@ -121,10 +121,8 @@ app.whenReady().then(() => {
     }
 
     let fileResponse: AxiosResponse<any, any>;
-    let responseData: {
-      status: string,
-      waybill: string
-    }[]
+    let responseData: { status: string, waybill: string }[]
+    let failedWaybillItems: object[]
 
     if (!cachedDefaultPrinter) {
       const defPrinterRes = await getDefPrinter();
@@ -141,7 +139,9 @@ app.whenReady().then(() => {
       try {
         // Get Waybill URL from api
         const waybillResponse = await getWaybillUrl(apiAccount.account, data.invoice_no);
-        responseData = waybillResponse.data.data
+        responseData = waybillResponse.data.data;
+        failedWaybillItems = responseData.filter((data) => data.status === 'fail');
+        responseData = responseData.filter((data) => data.status !== 'fail')
       } catch (error) {
         log.error('[Waybill Url] API error response:', error);
         return {
@@ -202,10 +202,9 @@ app.whenReady().then(() => {
 
     return {
       status: 'SUCCESS',
-      message: 'All waybills processed',
+      message: 'Waybills processed',
+      failedWaybillItems
     };
-
-
   })
 })
 
