@@ -20,7 +20,8 @@
 
   <template id="qr-page">
     <div class="wrapper">
-      <button class="back_button" id="home-button">Back</button>
+      <button class="option_button home-button"
+        style="opacity: 1; width: fit-content; padding: 12px; margin-bottom: 25px;" id="home-button">Back</button>
       <!-- <div id="qr-section">
         <h1>QR Scanner</h1>
         <video id="webcam" autoplay playsinline width="500" height="500"></video>
@@ -29,6 +30,8 @@
       <div class="col_box mb-40">
         <div class="row_box">
           <form class="input-wrapper">
+            <input id="waybill-qr-input" type="text" autocomplete="off" autofocus
+              style="opacity: 0; position: absolute; left: -9999px;" />
             <input placeholder="Enter reference number or invoice no..." id="waybill-input" required>
             <span id="clear-button">&times;</span>
           </form>
@@ -40,38 +43,15 @@
             Print Waybill
           </button>
         </div>
+        <div class="toast-box" id="toast"></div>
+        <div class="toast-waybill-box" id="toast-waybill-box"></div>
       </div>
 
-      <!-- Not Found Error  -->
-      <div class="message_wrapper" id="error-message">
-        <h1>Oh Snap!</h1>
-        <p>It seems that the waybill you are looking for doesn't exist in the system yet.</p>
-      </div>
 
       <!-- Waybill Content -->
-      <div class="col_box waybill_container" id="waybill-content">
-        <div class="waybill_header">
-          <h1 id="user-header"></h1>
-          <p class="kinds" id="kinds"></p>
-        </div>
-        <div>
-          <p id="user-fullname"></p>
-          <p id="user-email"></p>
-        </div>
-        <div class="artwork_row" id="artwork-row">
-          <!-- Artwork cards are dynamically generated and appended via JavaScript in the renderer -->
-          <!-- Example structure for reference (not rendered directly):
-            <div class="card">
-              <div class="image_container">
-                <img src="sample.jpg" alt="Artwork" />
-                <div class="size_block">
-                  <p>80x80mm</p>
-                </div>
-              </div>
-              <p>Artpaper Sticker / Die Cut / Matte / Normal</p>
-              <p class="card_footer">500 pcs</p>
-            </div>
-        -->
+      <div class="col_box" id="waybill-col-display">
+        <div class="col_box waybill_container" id="waybill-content">
+          <!-- Content is dynamically generated -->
         </div>
       </div>
 
@@ -89,6 +69,12 @@
         </div>
       </div>
 
+      <!-- Not Found Error  -->
+      <div class="message_wrapper" id="error-message">
+        <h1>Oh Snap!</h1>
+        <p>It seems that the waybill you are looking for doesn't exist in the system yet.</p>
+      </div>
+
       <div class="modal_overlay" id="loading-modal">
         <div class="modal_container">
           <div class="modal_content">
@@ -101,7 +87,8 @@
 
   <template id="config-page">
     <div class="col_box wrapper">
-      <button class="back_button" id="home-button">Back</button>
+      <button class="option_button home-button"
+        style="opacity: 1; width: fit-content; padding: 12px; margin-bottom: 25px;" id="home-button">Back</button>
       <label for="printerList">Select a Printer:</label>
       <div class="row_box">
         <select id="printerList" style="width: 100%;">
@@ -119,20 +106,6 @@
       </div>
     </div>
   </template>
-
-  <div id="toast" style="
-  display: none;
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  font-size: 14px;
-  z-index: 9999;
-" />
 </body>
 
 </html>

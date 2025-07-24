@@ -307,8 +307,40 @@ p {
 
 .back_button {
   /* background-color: red; */
-  border: none;
+  border: 2px solid #068e74;
   width: fit-content;
   padding: 6px;
   cursor: pointer;
+  border-radius: 5px;
+  margin-bottom: 25px;
+}
+
+#waybill-input:focus {
+  outline: none;
+}
+
+.toast-box {
+  height: 80px;
+  background-color: red;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: white;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.toast-waybill-box {
+  min-height: 80px;
+  background-color: red;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: white;
+  display: none;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+  flex-direction: column;
+  gap: 8px;
+  font-family: sans-serif;
 }
