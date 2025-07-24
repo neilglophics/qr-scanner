@@ -5,5 +5,6 @@ export enum Account {
     UK = 'UK',
     SG = 'SG',
     NZ = 'NZ',
-    JP = 'JP'
+    JP = 'JP',
+    SHIPPING = 'SHIPPING'
 }

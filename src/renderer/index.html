@@ -43,40 +43,15 @@
             Print Waybill
           </button>
         </div>
-        <div class="toast-box" id="toast" />
+        <div class="toast-box" id="toast"></div>
+        <div class="toast-waybill-box" id="toast-waybill-box"></div>
       </div>
 
-      <!-- Not Found Error  -->
-      <div class="message_wrapper" id="error-message">
-        <h1>Oh Snap!</h1>
-        <p>It seems that the waybill you are looking for doesn't exist in the system yet.</p>
-      </div>
 
       <!-- Waybill Content -->
-      <div class="col_box waybill_container" id="waybill-content">
-        <div class="waybill_header">
-          <h1 id="user-header"></h1>
-          <p class="kinds" id="kinds"></p>
-        </div>
-        <div>
-          <p id="invoice-no"></p>
-          <p id="user-fullname"></p>
-          <p id="user-email"></p>
-        </div>
-        <div class="artwork_row" id="artwork-row">
-          <!-- Artwork cards are dynamically generated and appended via JavaScript in the renderer -->
-          <!-- Example structure for reference (not rendered directly):
-            <div class="card">
-              <div class="image_container">
-                <img src="sample.jpg" alt="Artwork" />
-                <div class="size_block">
-                  <p>80x80mm</p>
-                </div>
-              </div>
-              <p>Artpaper Sticker / Die Cut / Matte / Normal</p>
-              <p class="card_footer">500 pcs</p>
-            </div>
-        -->
+      <div class="col_box" id="waybill-col-display">
+        <div class="col_box waybill_container" id="waybill-content">
+          <!-- Content is dynamically generated -->
         </div>
       </div>
 
@@ -92,6 +67,12 @@
             <button>Stop Print</button>
           </div>
         </div>
+      </div>
+
+      <!-- Not Found Error  -->
+      <div class="message_wrapper" id="error-message">
+        <h1>Oh Snap!</h1>
+        <p>It seems that the waybill you are looking for doesn't exist in the system yet.</p>
       </div>
 
       <div class="modal_overlay" id="loading-modal">

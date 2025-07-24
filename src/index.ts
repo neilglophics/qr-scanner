@@ -15,6 +15,8 @@ import { doneInvoice, getWaybillItems, getWaybillUrl } from './services/waybill'
 import { getJobDetails } from './services/job-description';
 import ElectronStore from 'electron-store';
 import { StoreSchema } from './models/store-schema';
+import { getWowPressAccount } from './services/wowpress';
+import { Account } from './constants/accounts';
 
 log.info('App is starting...');
 dotenv.config();
@@ -108,18 +110,19 @@ app.whenReady().then(() => {
     * Once downloaded, the PDF is used for printing.
     * After the print attempt (successful or failed), the temporary file is automatically deleted to free up disk space.
   */
-  ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string | null, printOption: PrintOption, manualLookup: boolean = false) => {
-    let apiUrl = manualLookup ? manualSearch(data.invoice_no) : data.url
-    if (!apiUrl) {
+  ipcMain.handle('print', async (_event: Electron.IpcMainInvokeEvent, data: QR, printerName: string | null, printOption: PrintOption) => {
+
+    let apiAccount = await accountMapping(data.invoice_no)
+    if (apiAccount.status === 'ERROR') {
       return {
         status: 'ERROR',
-        error: 'Invalid Invoice Number.',
+        error: apiAccount.message,
       };
     }
 
-    const tempFileName = `downloaded_${Date.now()}.pdf`;
-    const localFilePath = path.join(app.getPath('temp'), tempFileName);
-    let fileResponse: AxiosResponse<any, any>
+    let fileResponse: AxiosResponse<any, any>;
+    let responseData: { status: string, waybill: string }[]
+    let failedWaybillItems: object[]
 
     if (!cachedDefaultPrinter) {
       const defPrinterRes = await getDefPrinter();
@@ -131,24 +134,24 @@ app.whenReady().then(() => {
     }
 
     const printer = printerName ? printerName : cachedDefaultPrinter;
+
     if (printOption === PrintOption.WAYBILL) {
       try {
         // Get Waybill URL from api
-        const response = await getWaybillUrl(apiUrl, data.invoice_no);
-
-        // Download Waybill PDF
-        fileResponse = await axios.get(response.data.data, { responseType: 'stream' });
+        const waybillResponse = await getWaybillUrl(apiAccount.account, data.invoice_no);
+        responseData = waybillResponse.data.data;
+        failedWaybillItems = responseData.filter((data) => data.status === 'fail');
+        responseData = responseData.filter((data) => data.status !== 'fail')
       } catch (error) {
-        log.error('[Waybill Url] API error response:', error?.response?.data);
+        log.error('[Waybill Url] API error response:', error);
         return {
           status: 'ERROR',
           error: error?.response?.data.error ?? 'Error',
         };
       }
-
     } else {
       try {
-        const response = await getJobDetails(apiUrl, data);
+        const response = await getJobDetails(apiAccount.account, data);
         fileResponse = response;
       } catch (error) {
         log.error('[Job Description] API error response:', error?.response?.data)
@@ -159,62 +162,64 @@ app.whenReady().then(() => {
       }
     }
 
-    await new Promise<void>((resolve, reject) => {
-      const writer = fs.createWriteStream(localFilePath);
-      fileResponse.data.pipe(writer);
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
+    await Promise.all(
+      responseData.map(async (data) => {
+        const tempFileName = `downloaded_${Date.now()}_${Math.random()}.pdf`;
+        const localFilePath = path.join(app.getPath('temp'), tempFileName);
+
+        try {
+          const fileResponse = await axios.get(data.waybill, { responseType: 'stream' });
+
+          await new Promise<void>((resolve, reject) => {
+            const writer = fs.createWriteStream(localFilePath);
+            fileResponse.data.pipe(writer);
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+          });
+
+          const filePrinted = await printFile(localFilePath, printer);
+          if (!filePrinted) {
+            throw new Error('OS not supported!');
+          }
+
+          log.info(`[SUCCESS] Printed: ${localFilePath}`);
+        } catch (error) {
+          log.error(`[ERROR] Processing file: ${error}`);
+        } finally {
+          fs.unlink(localFilePath, (unlinkErr) => {
+            if (unlinkErr) log.error('[CLEANUP] Failed:', unlinkErr);
+          });
+        }
+      })
+    );
 
     try {
-      const filePrinted = await printFile(localFilePath, printer);
-      if (!filePrinted) {
-        return {
-          status: 'ERROR',
-          error: `OS not supported!`,
-        };
-      }
-
-      try {
-        const response = await doneInvoice(apiUrl, data.invoice_no);
-        log.info('[Done Invoice] Invoice status changed', response.data);
-      } catch (error) {
-        log.error('[Done Invoice] Unable to process invoice', error);
-      }
-
-      return {
-        status: 'SUCCESS',
-        message: `PDF downloaded and printed successfully. Path: ${localFilePath}`
-      };
+      const response = await doneInvoice(apiAccount.account, data.invoice_no);
+      log.info('[Done Invoice] Invoice status changed', response.data);
     } catch (error) {
-      return {
-        status: 'ERROR',
-        error: `Printing failed: ${error}`,
-      };
-    } finally {
-      // Clear the temp file
-      fs.unlink(localFilePath, (unlinkErr) => {
-        if (unlinkErr) {
-          log.error('[CLEANUP] Failed to delete temp file:', unlinkErr);
-        } else {
-          log.info('[CLEANUP] Temp file deleted:', localFilePath);
-        }
-      });
+      log.error('[Done Invoice] Unable to process invoice', error);
     }
+
+    return {
+      status: 'SUCCESS',
+      message: 'Waybills processed',
+      failedWaybillItems
+    };
   })
 })
 
-ipcMain.handle('getItems', async (_event: Electron.IpcMainInvokeEvent, data: QR, manualLookup: boolean = false) => {
+ipcMain.handle('getItems', async (_event: Electron.IpcMainInvokeEvent, data: QR) => {
 
-  let apiUrl = manualLookup ? manualSearch(data.invoice_no) : data.url
-  if (!apiUrl) {
+  let apiAccount = await accountMapping(data.invoice_no)
+  if (apiAccount.status === 'ERROR') {
     return {
       status: 'FAIL',
-      error: 'Invalid Invoice Number.',
+      error: apiAccount.message,
     };
   }
+
   try {
-    const response = await getWaybillItems(apiUrl, data.invoice_no);
+    const response = await getWaybillItems(apiAccount.account, data.invoice_no);
 
     if (response.data.status === 'SUCCESS') {
       return {
@@ -271,19 +276,45 @@ app.on('activate', () => {
 });
 
 
-function manualSearch(invoiceNo: string): string {
-  const account = invoiceMapper(invoiceNo);
+async function accountMapping(invoiceNo: string) {
+  const isWowpress = invoiceNo.startsWith('WP');
+  let account: Account
+
+  if (isWowpress) {
+    const response = await getWowPressAccount(invoiceNo);
+    let accountRes = response.data.order;
+    if (!accountRes) {
+      return {
+        status: 'ERROR',
+        message: 'Reference number does not exist on the system.'
+      }
+    }
+    account = accountRes.account.toString().toUpperCase() as Account;
+  } else {
+    account = invoiceMapper(invoiceNo);
+  }
+
   if (!account) {
     console.warn(`No account found for invoice number: ${invoiceNo}`);
-    return null;
+    return {
+      status: 'ERROR',
+      message: `No account found for invoice number: ${invoiceNo}`
+    };
   }
   const env = process.env.APP_ENV as Environment;
 
   if (!env) {
     console.warn('Environment variable APP_ENV is not set.');
-    return null;
+    return {
+      status: 'ERROR',
+      message: `Environment variable APP_ENV is not set.`
+    };
   }
-  return accountMapper(account, env);
+
+  return {
+    status: 'SUCCESS',
+    account: accountMapper(account, env)
+  };
 }
 
 
@@ -392,7 +423,7 @@ async function printFile(localFilePath: string, printer: string): Promise<boolea
   switch (platform) {
     case 'win32':
       try {
-        await print(localFilePath, { printer });
+        await print(localFilePath, { printer, monochrome: true });
         log.info('Printed successfully on printer', printer);
         return true;
       } catch (err) {

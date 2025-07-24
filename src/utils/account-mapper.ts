@@ -38,6 +38,12 @@ const API_URLS: Record<Account, Record<Environment, string>> = {
         development: 'https://dev-api.stickerjapan.com',
         live: 'https://api.stickerjapan.com'
     },
+    // Glophics Shipping
+    SHIPPING: {
+        local: 'http://api.glophicsshipping/api',
+        development: 'https://dev-upgraded-api.glophicsshipping.com',
+        live: 'https://api.glophicsshipping.com'
+    }
 }
 
 export function accountMapper(account: Account, env: Environment): string {
